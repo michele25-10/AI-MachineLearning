@@ -144,6 +144,28 @@ df_alt = df_alt[df_alt['aqi_discretized'].notna()]
 
 ```
 
+#### Conversioni
+
+> Regole d'oro:
+>
+> - Se una colonna rappresenta tempo, va sempre convertita in datetime; poi estrai solo ciò che serve al modello (i modelli ML non capiscono il datetime direttamente).
+>   | Feature | Quando è utile |
+>   | ------- | -------------------------- |
+>   | hour | fenomeni giornalieri |
+>   | weekday | differenze feriali/weekend |
+>   | month | stagionalità |
+>   | year | trend lunghi |
+>
+> * Tutto ciò che è quantità, misura, valore fisico → numerico
+
+```python
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df['hour'] = df['date'].dt.hour
+df['no2'] = pd.to_numeric(df['no2'], errors='coerce')
+df['o3'] = pd.to_numeric(df['o3'], errors='coerce')
+
+```
+
 ### 5. Visualizzazione
 
 La visualizzazione serve a:
@@ -213,3 +235,99 @@ Comandi per i grafici:
 > - Matrice di confusione → classificazione
 > - Normalizzare per riga → più facile confrontare classi sbilanciate
 > - Colori → evidenziano accuratezza e errori
+
+#### Matrice di correlazione
+
+Una correlation matrix è una tabella (spesso visualizzata come heatmap) che mostra: quanto due variabili numeriche sono linearmente correlate tra loro. Ogni cella contiene un valore [-1, 1]:
+
+- +1 → crescono insieme
+- -1 → una cresce, l’altra diminuisce
+- 0 → nessuna relazione lineare
+
+Guardando la colonna (o riga) del target (status, aqi_discretized, ecc.) puoi vedere:
+
+- quali variabili influenzano di più il target
+- quali hanno poco o nessun legame
+
+> Regola d'oro:
+>
+> - |r| ≥ 0.70: correlazione realmente forte (altamente predidttiva)
+> - 0.40 ≤ |r| < 0.70: correlazione moderata (feature informativa) spesso migliora le performance, può lavorare bene con altre
+> - 0.20 ≤ |r| < 0.40: correlazione debole ma utile per: modelli non lineari, modelli ad albero, interazioni tra feature
+> - |r| < 0.20: nessun valore informativo (rumore, feature irrilevante)
+
+```python
+
+numeric_df = df.select_dtypes(include=['float64', 'int64'])
+import seaborn as sns
+
+correlation_matrix = numeric_df.corr()
+
+# Plot heatmap
+plt.figure(figsize=(14, 10))  # Define 14×10 inch figure for clear visualization
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+plt.title("Correlation Heatmap: Environmental Variables vs Status")
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+plt.tight_layout()  # Optimize spacing and margins
+plt.show()
+
+```
+
+### 6. Rimuovi le features con bassa correlazione
+
+Il **target leakage** avviene quando: una feature contiene informazioni che non sarebbero disponibili al momento della previsione (il modello impara una scorciatoia illegittima); Chiediti SEMPRE: Questa feature sarebbe disponibile prima di dover fare la previsione?.
+Oppure segui le regole d'oro della matrice della correlazione per capire quali feature eliminare.
+
+### 7. Split and Scale
+
+```python
+X = df_group[features]
+y = df_group['status']
+
+# Split dataset
+X_train_group, X_test_group, y_train_group, y_test_group = train_test_split(
+    X, y,
+    test_size=0.3,   # 30% for test set and 70% for training set
+    random_state=42  # for reproducibility
+)
+
+# Scaling
+scaler = StandardScaler()
+X_train_scaled_group = scaler.fit_transform(X_train_group)
+X_test_scaled_group  = scaler.transform(X_test_group)
+
+print("\nTraining set shape:", X_train_group.shape)
+print("Testing set shape: ", X_test_group.shape)
+print("Shapes after scaling:", X_train_scaled_group.shape, X_test_scaled_group.shape)
+
+```
+
+#### Standard Scaler
+
+StandardScaler è uno strumento di feature scaling che trasforma ogni feature in modo che:
+
+- media = 0
+- deviazione standard = 1
+
+x_scaled = (x - media)/deviazione standard
+
+Questa trasformazione si chiama standardizzazione.
+
+#### Algoritmi che NECESSITANO di StandardScaler
+
+| Algoritmo           | Perché           |
+| ------------------- | ---------------- |
+| Logistic Regression | Gradient descent |
+| SVM                 | Margini          |
+| k-NN                | Distanza         |
+| PCA                 | Varianza         |
+| Neural Networks     | Stabilità        |
+
+#### Algoritmi che NON lo richiedono
+
+| Algoritmo     | Motivo                |
+| ------------- | --------------------- |
+| Decision Tree | Split su soglie       |
+| Random Forest | Alberi indipendenti   |
+| XGBoost       | Invarianti alla scala |

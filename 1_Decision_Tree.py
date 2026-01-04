@@ -2,11 +2,11 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import OneHotEncoder, KBinsDiscretizer, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
 
 
 # =================== Caricamento Dataset ===================
@@ -14,7 +14,7 @@ file_path = "data/air_quality.csv"
 if not os.path.exists(file_path):
     raise FileNotFoundError("Il file CSV non esisteva")
 
-df = pd.read_csv(file_path, low_memory=False, na_values=['-', 'NA', 'ND', 'n/a', ''])
+df = pd.read_csv(file_path, low_memory=False, na_values=['-', 'NA', 'ND', 'n/a', ''], nrows=1000000)
 
 
 # ================== Dataset exploration =====================
@@ -29,10 +29,10 @@ print(df.info())
 print("\nDescrizione statistiche")
 print(df.describe(include="all"))
 
-print("\nDistribuzione numerica delle colonne")
-df.hist(figsize=(12, 6))
-plt.tight_layout()
-plt.show()
+#print("\nDistribuzione numerica delle colonne")
+#df.hist(figsize=(12, 6))
+#plt.tight_layout()
+#plt.show()
 
 
 # ================== Data cleaning =====================
@@ -86,3 +86,95 @@ df['aqi_discretized'] = pd.cut(
 
 df = df[df['aqi_discretized'].notna()]
 
+# Conversion
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df['hour'] = df['date'].dt.hour
+df['no2'] = pd.to_numeric(df['no2'], errors='coerce')
+df['o3'] = pd.to_numeric(df['o3'], errors='coerce')
+
+
+# ======================= Visualizzazione dati =========================
+numeric_df = df.select_dtypes(include=['float64', 'int64'])
+
+correlation_matrix = numeric_df.corr()
+
+# Plot heatmap
+plt.figure(figsize=(14, 10))  # Define 14×10 inch figure for clear visualization
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+plt.title("Correlation Heatmap: Environmental Variables vs Status")
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+plt.tight_layout()  # Optimize spacing and margins
+plt.show()
+
+
+# ===================== Rimozione feature non influenti =======================
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df['year'] = df['date'].dt.year
+
+features = [
+    'pm2.5', 'pm10',
+    'co', 'co_8hr',
+    'no2', 'nox', 'no',
+    'so2',
+    'o3',
+    'windspeed', 'winddirec',
+    'year', 'longitude', 'latitude'
+    ]
+
+
+# ======================= Split and Scale =========================
+X = df[features]
+y = df["status"]
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.3,
+    random_state=42
+)
+
+# Scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.fit_transform(X_test)
+
+print("\nTraining set shape:", X_train.shape)
+print("Testing set shape: ", X_test.shape)
+print("Shapes after scaling:", X_train_scaled.shape, X_test_scaled.shape)
+
+
+# ====================== Model ========================
+# Inizializzo il modello
+model = DecisionTreeClassifier(random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# Predizioni
+y_pred = model.predict(X_test_scaled)
+
+# Valutazioni
+print("\nModel Performance:")
+print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
+
+# Visualizzazione del Decision Tree
+print("Features used:", X.columns.tolist())
+
+plt.figure(figsize=(20, 10))
+plot_tree(
+    model,
+    max_depth=2,
+    feature_names=X.columns,
+    class_names=[str(cls) for cls in sorted(y.unique())],
+    filled=True,
+    rounded=True,
+    fontsize=5  
+)
+plt.title("Decision Tree (Depth ≤ 2)")
+plt.show()
+
+# Visualizzazione matrice di confusione
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=sorted(y.unique()))
+disp.plot(cmap='Blues')
+plt.title("Confusion Matrix")
+plt.show()
