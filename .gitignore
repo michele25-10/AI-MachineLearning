@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# dati da leggere
+data/*
+
 # C extensions
 *.so
 
