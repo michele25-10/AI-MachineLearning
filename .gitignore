@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # dati da leggere
-data/*
+data/air_quality.csv
 
 # C extensions
 *.so
