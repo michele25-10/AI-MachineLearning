@@ -62,21 +62,13 @@ X_test_scaled = scaler.transform(X_test)
 ```python
 model = models.Sequential([
     layers.Input(shape=(X_train_scaled.shape[1],)),
-
     # Hidden layers
     layers.Dense(128, activation='relu'),
-    layers.Dropout(0.3),
-
     layers.Dense(64, activation='relu'),
-    layers.Dropout(0.2),
-
     layers.Dense(32, activation='relu'),
-
     # Output layer
     layers.Dense(num_classes, activation='softmax')  # softmax per classificazione
 ])
-
-model.summary()
 ```
 
 #### Scelta delle activation functions
@@ -135,28 +127,12 @@ model.compile(
 ### 5. Training del modello
 
 ```python
-# Early stopping per evitare overfitting
-early_stopping = keras.callbacks.EarlyStopping(
-    monitor='val_loss',
-    patience=10,
-    restore_best_weights=True
-)
-
-# Model checkpoint per salvare il miglior modello
-checkpoint = keras.callbacks.ModelCheckpoint(
-    'best_model.h5',
-    monitor='val_accuracy',
-    save_best_only=True,
-    mode='max'
-)
-
 # Training
 history = model.fit(
     X_train_scaled, y_train,
     validation_data=(X_val_scaled, y_val),
-    epochs=100,
-    batch_size=32,
-    callbacks=[early_stopping, checkpoint],
+    epochs=50,
+    batch_size=128,
     verbose=1
 )
 ```

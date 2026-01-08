@@ -44,7 +44,6 @@ class_names = df[target].unique()
 num_classes = len(class_names)
 
 
-
 # ===================== CLEANING ========================
 columns_to_drop = ["date", "sitename", "county", "aqi", "pollutant", "siteid", "unit"]
 df = df.drop(columns=columns_to_drop)
@@ -151,7 +150,7 @@ print(f"Test Accuracy: {acc:.4f}")
 y_pred = model.predict(X_test, verbose=0).argmax(axis=1)
 
 
-# ==================== Visualization =====================
+# ==================== Visualization ======================
 cm = confusion_matrix(y_test_idx, y_pred, normalize="true")
 plt.figure(figsize=(10,8))
 
