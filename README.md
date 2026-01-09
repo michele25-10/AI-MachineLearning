@@ -9,3 +9,4 @@
 ## Documentazione per esame:
 
 - 📚 [Matplotlib](documentations/Matplotlib.pdf)
+- 📚 [Tensorflow](documentations/Tensorflow.pdf)
