@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 import keras
-from keras import layers
+from keras import layers, optimizers
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -96,7 +96,8 @@ model = keras.Sequential([
 ])
 
 model.compile(
-    loss="categorical_crossentropy", 
+    optimizer=optimizers.Adam(learning_rate=1e-3),
+    loss="sparse_categorical_crossentropy", 
     metrics=["accuracy"] 
 )
 
@@ -111,7 +112,7 @@ history = model.fit(
 loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
 print(f"Neural Network: {accuracy:.4f}")
 
-y_pred = model.prediction(X_test, verbose=0).argmax(axis=1) 
+y_pred = model.predict(X_test, verbose=0).argmax(axis=1) 
 
 cm = confusion_matrix(y_test, y_pred)
 disp = ConfusionMatrixDisplay(cm, display_labels=sorted(y.unique()))

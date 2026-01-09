@@ -71,36 +71,37 @@ model = models.Sequential([
 ])
 ```
 
+#### Numero di hidden layers
+
+| Dataset            | Hidden layers |
+| ------------------ | ------------- |
+| Piccolo / semplice | 1–2           |
+| Medio              | 2–3           |
+| Complesso          | 3–5           |
+| Deep learning vero | >5            |
+
+> **Quanti neuroni per layer**?
+> Il primo layer deve avere più neuroni delle feature per poter creare combinazioni non lineari utili:
+> neuroni compresi tra i 2 x numero feature e 4 x numero feature
+
+> **Regola d’oro:**
+> Struttura piramidale decrescente; esempio:
+> `128 → 64 → 32 → output`
+
 #### Scelta delle activation functions
 
-| Layer                                | Activation | Quando usarla                 |
-| ------------------------------------ | ---------- | ----------------------------- |
-| Hidden                               | ReLU       | Default per layer intermedi   |
-| Hidden                               | LeakyReLU  | Se ReLU causa "dying neurons" |
-| Hidden                               | tanh       | Dati centrati su 0            |
-| Output (classificazione binaria)     | sigmoid    | Probabilità 0-1               |
-| Output (classificazione multiclasse) | softmax    | Probabilità tra classi        |
-| Output (regressione)                 | linear     | Valore continuo               |
-
-#### Dropout
-
-Il **Dropout** è una tecnica di regolarizzazione che:
-
-- Disattiva casualmente una percentuale di neuroni durante il training
-- Previene overfitting
-- Forza la rete a imparare rappresentazioni più robuste
-
-> Regole pratiche:
->
-> - Dropout rate: 0.2-0.5 (20%-50%)
-> - Non usare su layer di output
-> - Maggiore dopo layer più grandi
+| Layer                                | Activation | Quando usarla               |
+| ------------------------------------ | ---------- | --------------------------- |
+| Hidden                               | ReLU       | Default per layer intermedi |
+| Output (classificazione binaria)     | sigmoid    | Probabilità 0-1             |
+| Output (classificazione multiclasse) | softmax    | Probabilità tra classi      |
+| Output (regressione)                 | linear     | Valore continuo             |
 
 ### 4. Compilazione del modello
 
 ```python
 model.compile(
-    optimizer='adam',
+    optimizer=optimizers.Adam(learning_rate=1e-3),
     loss='categorical_crossentropy',  # per classificazione multiclasse
     metrics=['accuracy']
 )
@@ -108,12 +109,12 @@ model.compile(
 
 #### Scelta di optimizer e loss function
 
-| Task                        | Loss Function              | Optimizer |
-| --------------------------- | -------------------------- | --------- |
-| Classificazione binaria     | `binary_crossentropy`      | Adam      |
-| Classificazione multiclasse | `categorical_crossentropy` | Adam      |
-| Regressione                 | `mse` o `mae`              | Adam      |
-| Regressione con outlier     | `huber`                    | Adam      |
+| Task                                         | Loss Function                     | Optimizer |
+| -------------------------------------------- | --------------------------------- | --------- |
+| Classificazione binaria                      | `binary_crossentropy`             | Adam      |
+| Classificazione multiclasse One-Hot Encoding | `categorical_crossentropy`        | Adam      |
+| Classificazione multiclasse Label Encoder    | `sparse_categorical_crossentropy` | Adam      |
+| Regressione                                  | `mse`                             | Adam      |
 
 #### Optimizer comuni
 
