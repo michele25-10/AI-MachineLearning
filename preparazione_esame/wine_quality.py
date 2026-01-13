@@ -28,11 +28,13 @@ df = pd.read_csv(file_path, na_values=["NA", "-", "", "N/A", "NaN"], nrows=10000
 
 print(df.info())
 print(df.head())
+print(df.isnull().mean() * 100)
 
 # Vedo che tutte le colonne sono di tipo numerico fatta eccezione per
 # la colonna quality_cat (target) della quale ci tengo a sapere quali 
 # sono i valori che assume.
 target = "quality_cat"
+df = df.dropna(subset=[target])
 target_classes = df[target].unique()
 target_classes = sorted(target_classes)
 num_classes = len(target_classes)
@@ -63,23 +65,26 @@ num_cols.remove("sulphates")
 X = df[num_cols]
 y = df[target]
 
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-model = DecisionTreeClassifier()
-model.fit(X_train, y_train)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-y_pred = model.predict(X_test)
+
+model = DecisionTreeClassifier()
+model.fit(X_train_scaled, y_train)
+
+y_pred = model.predict(X_test_scaled)
 
 # 0.58
 acc = accuracy_score(y_test, y_pred)
 
 print(f"\nDecisionTreeClassifier: {acc:.2f}")
 
-cm = confusion_matrix(y_test, y_pred)
-disp = ConfusionMatrixDisplay(cm, display_labels=sorted(y.unique()))
+labels=np.arange(len(la_target.classes_))
+cm = confusion_matrix(y_test, y_pred, labels=labels)
+disp = ConfusionMatrixDisplay(cm, display_labels=la_target.classes_)
 disp.plot(cmap="Blues")
 plt.show()
 
@@ -87,11 +92,14 @@ plt.show()
 X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42)
 X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
 
+X_train_scaled = scaler.fit_transform(X_train)
+X_val_scaled = scaler.transform(X_val)
+X_test_scaled = scaler.transform(X_test)
+
 model = keras.Sequential([
-    layers.Input(shape=(X_train.shape[1],)),
+    layers.Input(shape=(X_train_scaled.shape[1],)),
     layers.Dense(64, activation="relu"),
     layers.Dense(32, activation="relu"), 
-    layers.Dense(16, activation="relu"), 
     layers.Dense(num_classes, activation="softmax")
 ])
 
@@ -102,20 +110,41 @@ model.compile(
 )
 
 history = model.fit(
-    X_train, y_train,
-    validation_data=(X_val, y_val),
-    epochs=50,
-    batch_size=128,
+    X_train_scaled, y_train,
+    validation_data=(X_val_scaled, y_val),
+    epochs=75,
+    batch_size=256,
     verbose=1 
 )
 
-loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
-print(f"Neural Network: {accuracy:.4f}")
+loss, accuracy = model.evaluate(X_val_scaled, y_val, verbose=0)
+print(f"Neural Network Accuracy: {accuracy:.4f}")
 
-y_pred = model.predict(X_test, verbose=0).argmax(axis=1) 
+y_pred = model.predict(X_test_scaled, verbose=0).argmax(axis=1) 
 
-cm = confusion_matrix(y_test, y_pred)
-disp = ConfusionMatrixDisplay(cm, display_labels=sorted(y.unique()))
+# Grafici per valutazione del modello (Underfitting/Overfitting)
+plt.figure(figsize=(12, 12))
+plt.plot(history.history["accuracy"], color="red", label="Accuracy")
+plt.plot(history.history["val_accuracy"], color="blue", label="Val Accuracy")
+plt.title("Analisi Accuratezza")
+plt.xlabel("Epoche")
+plt.ylabel("Valore")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(12, 12))
+plt.plot(history.history["loss"], color="green", label="loss")
+plt.plot(history.history["val_loss"], color="purple", label="Val loss")
+plt.title("Analisi loss")
+plt.xlabel("Epoche")
+plt.ylabel("Valore")
+plt.legend()
+plt.show()
+
+# Visualizzazione della matrice di confusione per poter giudicare output
+labels = np.arange(len(la_target.classes_))
+cm = confusion_matrix(y_test, y_pred, labels=labels)
+disp = ConfusionMatrixDisplay(cm, display_labels=la_target.classes_)
 disp.plot(cmap="Blues")
 plt.show()
 

@@ -77,10 +77,10 @@ num_cols.remove("BestDeadliftKg")
 num_cols.remove("Place")
 
 X = df[num_cols]
-y = df[target]
+X = X.dropna(axis=0, how="all")
+X= X.dropna(axis=0, how="any")
 
-X.dropna(axis=0, how="all")
-X.dropna(axis=0, how="any")
+y = df[target]
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
@@ -152,12 +152,3 @@ disp = ConfusionMatrixDisplay(cm)
 disp.plot()
 plt.show()
 
-# Clustering
-# kmeans = KMeans(n_clusters=num_classes, random_state=42)
-# labels = kmeans.fit_predict(X)
-
-# ct = pd.crosstab(df[target], labels, colnames=["cluster"])
-# print("\nContingency: equipment vs cluster")
-# print(ct)
-
-# cluster_to_equipment = ct.idxmax(axis=0).to_dict()

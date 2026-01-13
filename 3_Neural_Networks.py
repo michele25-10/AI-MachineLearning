@@ -117,8 +117,8 @@ y_test_oh = to_categorical(y_test_idx, num_classes=num_classes)
 
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
-X_val = scaler.fit_transform(X_val)
-X_test = scaler.fit_transform(X_test)
+X_val = scaler.transform(X_val)
+X_test = scaler.transform(X_test)
 
 print(f"\nTraining set dimensions: {X_train.shape}")
 print(f"\nTest set dimensions: {X_test.shape}")
