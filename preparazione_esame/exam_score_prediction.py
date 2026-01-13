@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
 
-from tensorflow.keras import layers, models
+import keras as keras
+from tensorflow.keras import layers, optimizers
 
 from sklearn.preprocessing import LabelEncoder, PolynomialFeatures
 from sklearn.model_selection import train_test_split
@@ -35,12 +36,12 @@ file_path = "../data/Exam_Score_Prediction.csv"
 if not os.path.exists(file_path):
     raise FileNotFoundError("CSV non trovato")
 
-df = pd.read_csv(file_path, na_values=['-', 'NA', 'N/A', 'NaN'], nrows=10000000)
+df = pd.read_csv(file_path, na_values=['-', 'NA', 'N/A', 'NaN', ""], nrows=10000000)
 
 print("\nDataset information: ")
 print(df.info())
-
 print(df.head())
+print(df.isnull().mean() * 100)
 
 df = df.drop(columns=["student_id"])
 df = df.dropna(axis=1, how="all")
@@ -89,8 +90,6 @@ num_cols.remove("course")
 num_cols.remove("internet_access")
 num_cols.remove("exam_difficulty")
 
-scaler = StandardScaler()
-df[num_cols] = scaler.fit_transform(df[num_cols])
 
 # ============== SPLIT, MODEL, PREDICT ==================
 X = df[num_cols].copy()
@@ -98,9 +97,13 @@ y = df[target]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
 model = LinearRegression()
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
+model.fit(X_train_scaled, y_train)
+y_pred = model.predict(X_test_scaled)
 
 rmse = root_mean_squared_error(y_test, y_pred)
 mse = mean_squared_error(y_test, y_pred)
@@ -144,30 +147,26 @@ y = df[target]
 X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42)
 X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
 
+X_train_scaled = scaler.fit_transform(X_train)
+X_val_scaled = scaler.transform(X_val)
+X_test_scaled = scaler.transform(X_test)
+
 print("\nReti Neurali:")
 print(f"Training set: {X_train.shape}")
 print(f"Validation set: {X_val.shape}")
 print(f"Test set: {X_test.shape}")
 
-# Già standardizzato in precedenza
-# scaler = StandardScaler()
-# X_train_scaled = scaler.fit_transform(X_train)
-# X_val_scaled = scaler.transform(X_val)
-# X_test_scaled = scaler.transform(X_test)
-X_train_scaled = X_train
-X_val_scaled = X_val
-X_test_scaled = X_test
 
-model = models.Sequential([
+model = keras.Sequential([
     layers.Input(shape=(X_train_scaled.shape[1], )),
     layers.Dense(128, activation="relu"),
-    layers.Dense(128, activation="relu"), 
-    layers.Dense(64, activation="relu"),
+    layers.Dense(64, activation="relu"), 
+    layers.Dense(32, activation="relu"),
     layers.Dense(1, activation="linear")
 ])
 
 model.compile(
-    optimizer="adam",
+    optimizer=optimizers.Adam(learning_rate=0.001),
     loss="mse", 
     metrics=["mse"]    
 )
@@ -180,11 +179,26 @@ history = model.fit(
     verbose=1
 )
 
-loss, mse = model.evaluate(X_test_scaled, y_test, verbose=0)
+loss, mse = model.evaluate(X_val_scaled, y_val, verbose=0)
 print(f"Test MSE: {mse:.4f}")
 
 y_pred = model.predict(X_test_scaled, verbose=0).ravel()
 
+plt.figure(figsize=(12, 12))
+plt.plot(history.history["mse"], color="red", label="mse")
+plt.plot(history.history["val_mse"], color="blue", label="val_mse")
+plt.ylabel("MSE value")
+plt.xlabel("Epoche")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(12, 12))
+plt.plot(history.history["loss"], color="red", label="loss")
+plt.plot(history.history["val_loss"], color="blue", label="val_loss")
+plt.ylabel("Loss value")
+plt.xlabel("Epoche")
+plt.legend()
+plt.show()
 
 # ========================= VISUALIZATION RESULT ==========================
 plt.scatter(y_test, y_pred, alpha=0.6, color="Violet", label="Predict values neural networks")

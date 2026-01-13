@@ -43,8 +43,8 @@ df = pd.read_csv(file_path, na_values=["NA", "-", "N/A", "NaN", ""], nrows=10000
 print("\nInformazioni sul dataframe:")
 print(df.info())
 print(df.head())
+print(df.isnull().mean() * 100)
 
-        
 # droppo le colonne delle categorie true e false che non mi interessano
 df = df.dropna(axis=1, how="all")
 df = df.dropna(axis=1, how="any")
@@ -63,21 +63,25 @@ if target in num_cols:
 num_cols.remove("sex")
 num_cols.remove("smoking")
 num_cols.remove("diabetes")
+num_cols.remove("platelets")
+num_cols.remove("creatinine_phosphokinase")
+num_cols.remove("anaemia")
+num_cols.remove("high_blood_pressure")
 
 
 X = df[num_cols]
 y = df[target]
 
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-model = DecisionTreeClassifier()
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
+model = DecisionTreeClassifier()
+model.fit(X_train_scaled, y_train)
+y_pred = model.predict(X_test_scaled)
+accuracy = accuracy_score(y_test, y_pred)
 print(f"Score accuracy: {accuracy:.2f}")
 
 plt.figure(figsize=(12, 12))
