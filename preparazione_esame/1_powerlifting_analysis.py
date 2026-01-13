@@ -108,7 +108,6 @@ model = keras.Sequential([
     layers.Input(shape=(X_train.shape[1], )),
     layers.Dense(32, activation="relu"),
     layers.Dense(16, activation="relu"),
-    layers.Dense(8, activation="relu"),
     layers.Dense(1, activation="linear")
 ])
 
@@ -121,7 +120,7 @@ model.compile(
 history = model.fit(
     X_train, y_train, 
     batch_size=128,
-    epochs=50,
+    epochs=20,
     verbose=1,
     validation_data=(X_val, y_val)
 )
@@ -129,6 +128,24 @@ history = model.fit(
 loss, mse = model.evaluate(X_test, y_test, verbose=0)
 print(f"MSE del modello: {mse}")
 y_pred = model.predict(X_test, verbose=0).flatten()
+
+plt.figure(figsize=(12, 12))
+plt.plot(history.history.get("mse"), color="red", label="MSE")
+plt.plot(history.history.get("val_mse"), color="blue", label="VAL MSE")
+plt.title("Model MSE")
+plt.xlabel("Epoche")
+plt.ylabel("MSE")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(12, 12))
+plt.plot(history.history.get("loss"), color="red", label="MSE")
+plt.plot(history.history.get("val_loss"), color="blue", label="VAL loss")
+plt.title("Model loss")
+plt.xlabel("Epoche")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
 
 plt.figure(figsize=(12, 12))
 plt.scatter(y_test, y_pred, color="blue", alpha=0.6, label="Predict")
