@@ -184,6 +184,9 @@ plt.show()
 
 #### Interpretazione dei grafici
 
+> La `loss` guida l'apprendimento (calcola quanto il modello ha sbagliato).
+> La `metrics` servono per valutare le prestazioni in modo più intuitivo (calcola quanto il modello è bravo)
+
 | Comportamento                      | Significato                   | Soluzione                                  |
 | ---------------------------------- | ----------------------------- | ------------------------------------------ |
 | Val_loss cresce, train_loss scende | **Overfitting**               | Più Dropout, Early stopping, Meno layer    |
@@ -225,129 +228,7 @@ plt.title('Confusion Matrix')
 plt.show()
 ```
 
-### 8. Ottimizzazione del modello
-
-#### Tecniche comuni
-
-| Tecnica                      | Scopo                    | Quando usarla            |
-| ---------------------------- | ------------------------ | ------------------------ |
-| **Batch Normalization**      | Stabilizza training      | Reti profonde (5+ layer) |
-| **Learning Rate Scheduling** | Riduce LR nel tempo      | Training molto lungo     |
-| **Data Augmentation**        | Aumenta variabilità dati | Dataset piccoli          |
-| **L1/L2 Regularization**     | Previene overfitting     | Molti parametri          |
-
-#### Batch Normalization
-
-```python
-model = models.Sequential([
-    layers.Input(shape=(X_train_scaled.shape[1],)),
-
-    layers.Dense(128),
-    layers.BatchNormalization(),  # Normalizza output del layer precedente
-    layers.Activation('relu'),
-    layers.Dropout(0.3),
-
-    layers.Dense(64),
-    layers.BatchNormalization(),
-    layers.Activation('relu'),
-    layers.Dropout(0.2),
-
-    layers.Dense(num_classes, activation='softmax')
-])
-```
-
-#### Learning Rate Scheduling
-
-```python
-# Riduce learning rate quando val_loss si stabilizza
-reduce_lr = keras.callbacks.ReduceLROnPlateau(
-    monitor='val_loss',
-    factor=0.5,        # Riduce LR della metà
-    patience=5,
-    min_lr=1e-7,
-    verbose=1
-)
-
-history = model.fit(
-    X_train_scaled, y_train,
-    validation_data=(X_val_scaled, y_val),
-    epochs=100,
-    callbacks=[early_stopping, reduce_lr]
-)
-```
-
-### 9. Salvare e caricare il modello
-
-```python
-# Salva modello completo
-model.save('my_model.h5')
-
-# Salva solo i pesi
-model.save_weights('model_weights.h5')
-
-# Carica modello
-loaded_model = keras.models.load_model('my_model.h5')
-
-# Carica solo i pesi
-model.load_weights('model_weights.h5')
-```
-
-### 10. Hyperparameter Tuning
-
-#### Grid Search con Keras
-
-```python
-from sklearn.model_selection import GridSearchCV
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-
-def create_model(neurons=64, dropout_rate=0.3, learning_rate=0.001):
-    model = models.Sequential([
-        layers.Input(shape=(X_train_scaled.shape[1],)),
-        layers.Dense(neurons, activation='relu'),
-        layers.Dropout(dropout_rate),
-        layers.Dense(num_classes, activation='softmax')
-    ])
-
-    optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
-    model.compile(optimizer=optimizer,
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    return model
-
-# Wrap model
-model = KerasClassifier(build_fn=create_model, verbose=0)
-
-# Define hyperparameters
-param_grid = {
-    'neurons': [32, 64, 128],
-    'dropout_rate': [0.2, 0.3, 0.5],
-    'learning_rate': [0.001, 0.0001],
-    'batch_size': [16, 32],
-    'epochs': [50]
-}
-
-# Grid search
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3, verbose=2)
-grid_result = grid.fit(X_train_scaled, y_train)
-
-print(f"Best: {grid_result.best_score_:.4f} using {grid_result.best_params_}")
-```
-
-### 11. Checklist finale
-
-Prima di considerare il modello completo, verifica:
-
-- [ ] **Preprocessing**: dati scalati correttamente?
-- [ ] **Split**: train/val/test separati correttamente?
-- [ ] **Architettura**: numero di layer e neuroni appropriato?
-- [ ] **Overfitting**: val_loss stabile o in crescita?
-- [ ] **Underfitting**: accuracy troppo bassa su entrambi i set?
-- [ ] **Metriche**: accuracy, precision, recall, F1-score valutati?
-- [ ] **Confusion Matrix**: errori sistematici su alcune classi?
-- [ ] **Callbacks**: early stopping e checkpoint configurati?
-- [ ] **Test finale**: modello valutato su test set mai visto?
-
-### 12. Troubleshooting comuni
+### 8. Troubleshooting comuni
 
 | Problema              | Causa probabile           | Soluzione                        |
 | --------------------- | ------------------------- | -------------------------------- |
@@ -359,10 +240,3 @@ Prima di considerare il modello completo, verifica:
 | Overfitting immediato | Troppi parametri          | Aggiungi Dropout, riduci neuroni |
 
 ---
-
-## Risorse utili
-
-- [TensorFlow Documentation](https://www.tensorflow.org/api_docs)
-- [Keras Guide](https://keras.io/guides/)
-- [Deep Learning Book](https://www.deeplearningbook.org/)
-- [Papers With Code](https://paperswithcode.com/)
