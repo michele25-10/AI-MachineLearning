@@ -131,7 +131,7 @@ print("\nMetriche Neural Networks:")
 print(f"Loss: {loss}")
 print(f"Accuracy: {acc}")
 
-y_pred = model.predict(X_test_scaled, verbose=0).argmax(axis=1)
+y_pred = (model.predict(X_test_scaled) > 0.5).astype(int).flatten()
 
 plt.figure(figsize=(12, 12))
 plt.plot(history.history["accuracy"], color="red", label="Accuracy")
@@ -189,7 +189,7 @@ model.fit(X_train_scaled, y_train)
 y_pred = model.predict(X_test_scaled)
 
 mse = mean_squared_error(y_test, y_pred)
-rmse = mean_squared_error(y_test, y_pred)
+rmse = root_mean_squared_error(y_test, y_pred)
 
 print("\nValutazione Linear Regression")
 print(f"mse: {mse}")
