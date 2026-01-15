@@ -2,8 +2,6 @@
 # Step 1 – Analisi esplorativa dei dati
 # Step 2 - Albero Decisionale
 # Step 3 - Rete Neurale
-# Step 4 - Clustering
-# Step 5 - Confronto 
 
 
 import os
